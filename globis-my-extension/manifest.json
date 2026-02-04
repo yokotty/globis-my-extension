@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "GLOBIS マイページ通知拡張",
+  "version": "0.1.0",
+  "description": "Expand notification text on GLOBIS VC without opening detail pages.",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://vc.globis.ac.jp/my/cm/*",
+        "https://vc.globis.ac.jp/my/*",
+        "https://vc.globis.ac.jp/cm/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
