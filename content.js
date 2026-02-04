@@ -3,6 +3,14 @@ const STYLE_ID = "vc-expand-style";
 const INIT_DELAY_MS = 1200;
 const OBS_DEBOUNCE_MS = 200;
 const EXPANDED_ATTR = "data-vc-expanded";
+const MENTION_SUFFIX = "であなたにメンションしました";
+
+function shouldExpand(item) {
+  const title = item.querySelector("p.line-clamp-2");
+  if (!title) return false;
+  const text = (title.textContent || "").trim();
+  return text.endsWith(MENTION_SUFFIX);
+}
 
 function expandText(root = document) {
   const items = root.classList && root.classList.contains(ITEM_CLASS)
@@ -14,6 +22,7 @@ function expandText(root = document) {
     const editor = item.querySelector(".editor-content");
     if (!editor) continue;
     if (editor.getAttribute(EXPANDED_ATTR) === "true") continue;
+    if (!shouldExpand(item)) continue;
 
     editor.classList.remove("line-clamp-3");
     editor.classList.remove("line-clamp-4");
