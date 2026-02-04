@@ -4,6 +4,10 @@ const INIT_DELAY_MS = 1200;
 const OBS_DEBOUNCE_MS = 200;
 const EXPANDED_ATTR = "data-vc-expanded";
 const MENTION_SUFFIX = "であなたにメンションしました";
+const HIDDEN_ATTR = "data-vc-hidden";
+const DEDUPE_LINES = 5;
+
+const seenBodies = new Set();
 
 function shouldExpand(item) {
   const title = item.querySelector("p.line-clamp-2");
@@ -22,6 +26,25 @@ function expandText(root = document) {
     const editor = item.querySelector(".editor-content");
     if (!editor) continue;
     if (editor.getAttribute(EXPANDED_ATTR) === "true") continue;
+    if (item.getAttribute(HIDDEN_ATTR) === "true") continue;
+
+    const text = (editor.innerText || editor.textContent || "").trim();
+    if (text) {
+      const lines = text
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .slice(0, DEDUPE_LINES);
+      if (lines.length > 0) {
+        const key = lines.join("\n");
+        if (seenBodies.has(key)) {
+          item.style.display = "none";
+          item.setAttribute(HIDDEN_ATTR, "true");
+          continue;
+        }
+        seenBodies.add(key);
+      }
+    }
     if (!shouldExpand(item)) continue;
 
     editor.classList.remove("line-clamp-3");
