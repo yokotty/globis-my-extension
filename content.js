@@ -10,8 +10,6 @@ const DEDUPE_LINES = 5;
 const MIN_BODY_CHARS = 20;
 const COLLAPSED_ATTR = "data-vc-collapsed";
 
-let seenBodies = new Set();
-let itemBodyKey = new WeakMap();
 let itemSignature = new WeakMap();
 let currentObserver = null;
 let finderObserver = null;
@@ -33,21 +31,9 @@ function getTitleText(item) {
   return normalizeText(title.textContent);
 }
 
-function getBodyKey(editor) {
-  const text = (editor.innerText || editor.textContent || "").trim();
-  if (!text) return "";
-  const lines = text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .slice(0, DEDUPE_LINES);
-  return lines.length > 0 ? lines.join("\n") : "";
-}
-
 function getItemSignature(item, editor) {
   const titleText = getTitleText(item);
-  const bodyKey = getBodyKey(editor);
-  return `${titleText}||${bodyKey}`;
+  return `${titleText}||${editor.innerText || editor.textContent || ""}`;
 }
 
 function shouldExpand(item) {
@@ -65,34 +51,6 @@ function resetItemState(item, editor) {
   item.removeAttribute(HIDDEN_ATTR);
   item.removeAttribute(COLLAPSED_ATTR);
   editor.removeAttribute(EXPANDED_ATTR);
-  itemBodyKey.delete(item);
-}
-
-function collapseItem(item) {
-  item.style.display = "block";
-  item.style.height = "0px";
-  item.style.minHeight = "0px";
-  item.style.margin = "0px";
-  item.style.padding = "0px";
-  item.style.overflow = "hidden";
-  item.setAttribute(COLLAPSED_ATTR, "true");
-  item.setAttribute(HIDDEN_ATTR, "true");
-}
-
-function hideIfDuplicate(item, editor) {
-  const key = getBodyKey(editor);
-  if (!key) return false;
-  if (key.length < MIN_BODY_CHARS) return false;
-  if (itemBodyKey.has(item)) return false;
-
-  if (seenBodies.has(key)) {
-    collapseItem(item);
-    return true;
-  }
-
-  seenBodies.add(key);
-  itemBodyKey.set(item, key);
-  return false;
 }
 
 function expandEditor(editor) {
@@ -125,9 +83,6 @@ function expandText(root = document) {
     }
     itemSignature.set(item, signature);
 
-    if (item.getAttribute(HIDDEN_ATTR) === "true") continue;
-
-    if (hideIfDuplicate(item, editor)) continue;
     if (!shouldExpand(item)) continue;
 
     expandEditor(editor);
@@ -159,6 +114,21 @@ function injectStyle() {
       display: block !important;
       -webkit-line-clamp: unset !important;
       -webkit-box-orient: initial !important;
+    }
+
+    .${ITEM_CLASS}[${COLLAPSED_ATTR}="true"] {
+      height: 0 !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      background: transparent !important;
+      overflow: hidden !important;
+    }
+
+    .${ITEM_CLASS}[${COLLAPSED_ATTR}="true"] * {
+      display: none !important;
     }
   `;
   document.head.appendChild(style);
@@ -244,8 +214,6 @@ function scheduleInit() {
 }
 
 function resetStateForNavigation() {
-  seenBodies = new Set();
-  itemBodyKey = new WeakMap();
   itemSignature = new WeakMap();
   clearObservers();
   stopPeriodicExpand();
