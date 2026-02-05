@@ -19,6 +19,16 @@ let lastUrl = location.href;
 let expandEnabledAt = Date.now() + EXPAND_DELAY_MS;
 let dedupeEnabledAt = Date.now() + EXPAND_DELAY_MS + DEDUPE_DELAY_MS;
 
+function nowMs() {
+  return Date.now();
+}
+
+function setTiming(expandDelayMs = EXPAND_DELAY_MS, dedupeDelayMs = DEDUPE_DELAY_MS) {
+  const start = nowMs();
+  expandEnabledAt = start + expandDelayMs;
+  dedupeEnabledAt = start + expandDelayMs + dedupeDelayMs;
+}
+
 function normalizeText(text) {
   return (text || "").replace(/\s+/g, "").trim();
 }
@@ -123,13 +133,7 @@ function expandEditor(editor) {
   editor.setAttribute(EXPANDED_ATTR, "true");
 }
 
-function expandText(root = document) {
-  const items = getItems(root);
-  if (items.length === 0) return;
-
-  clearDuplicateMarks(items);
-  const now = Date.now();
-
+function applyExpansions(items, now) {
   for (const item of items) {
     const editor = item.querySelector(".editor-content");
     if (!editor) continue;
@@ -138,10 +142,21 @@ function expandText(root = document) {
     if (editor.getAttribute(EXPANDED_ATTR) === "true") continue;
     expandEditor(editor);
   }
+}
 
-  if (now >= dedupeEnabledAt) {
-    applyDuplicateMarks(items);
-  }
+function applyDedupe(items, now) {
+  clearDuplicateMarks(items);
+  if (now < dedupeEnabledAt) return;
+  applyDuplicateMarks(items);
+}
+
+function expandText(root = document) {
+  const items = getItems(root);
+  if (items.length === 0) return;
+  const now = nowMs();
+
+  applyExpansions(items, now);
+  applyDedupe(items, now);
 }
 
 function injectStyle() {
@@ -271,8 +286,7 @@ function scheduleInit() {
 function resetStateForNavigation() {
   clearObservers();
   stopPeriodicExpand();
-  expandEnabledAt = Date.now() + EXPAND_DELAY_MS;
-  dedupeEnabledAt = Date.now() + EXPAND_DELAY_MS + DEDUPE_DELAY_MS;
+  setTiming();
 }
 
 function onUrlChange() {
