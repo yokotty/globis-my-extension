@@ -7,9 +7,11 @@ const EXPANDED_ATTR = "data-vc-expanded";
 const HIDDEN_ATTR = "data-vc-hidden";
 const MENTION_SUFFIX = "であなたにメンションしました";
 const DEDUPE_LINES = 5;
+const MIN_BODY_CHARS = 20;
 
 let seenBodies = new Set();
 let itemBodyKey = new WeakMap();
+let itemSignature = new WeakMap();
 let currentObserver = null;
 let finderObserver = null;
 let periodicTimer = null;
@@ -41,6 +43,12 @@ function getBodyKey(editor) {
   return lines.length > 0 ? lines.join("\n") : "";
 }
 
+function getItemSignature(item, editor) {
+  const titleText = getTitleText(item);
+  const bodyKey = getBodyKey(editor);
+  return `${titleText}||${bodyKey}`;
+}
+
 function shouldExpand(item) {
   const titleText = getTitleText(item);
   return titleText.includes(MENTION_SUFFIX);
@@ -50,6 +58,7 @@ function hideIfDuplicate(item, editor) {
   if (itemBodyKey.has(item)) return false;
   const key = getBodyKey(editor);
   if (!key) return false;
+  if (key.length < MIN_BODY_CHARS) return false;
   if (seenBodies.has(key)) {
     item.style.display = "none";
     item.setAttribute(HIDDEN_ATTR, "true");
@@ -79,6 +88,16 @@ function expandText(root = document) {
   for (const item of items) {
     const editor = item.querySelector(".editor-content");
     if (!editor) continue;
+
+    const signature = getItemSignature(item, editor);
+    const prevSignature = itemSignature.get(item);
+    if (prevSignature && prevSignature !== signature) {
+      item.style.display = "";
+      item.removeAttribute(HIDDEN_ATTR);
+      editor.removeAttribute(EXPANDED_ATTR);
+    }
+    itemSignature.set(item, signature);
+
     if (editor.getAttribute(EXPANDED_ATTR) === "true") continue;
     if (item.getAttribute(HIDDEN_ATTR) === "true") continue;
 
@@ -198,6 +217,7 @@ function onUrlChange() {
   lastUrl = location.href;
   seenBodies = new Set();
   itemBodyKey = new WeakMap();
+  itemSignature = new WeakMap();
   clearObservers();
   stopPeriodicExpand();
   scheduleInit();
