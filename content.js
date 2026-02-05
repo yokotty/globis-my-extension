@@ -51,11 +51,29 @@ function shouldExpand(item) {
 }
 
 function markDuplicate(item) {
+  item.style.display = "block";
+  item.style.height = "0px";
+  item.style.minHeight = "0px";
+  item.style.margin = "0px";
+  item.style.padding = "0px";
+  item.style.overflow = "hidden";
+  item.style.border = "0";
+  item.style.boxShadow = "none";
+  item.style.background = "transparent";
   item.setAttribute(DUPLICATE_ATTR, "true");
 }
 
 function clearDuplicateMarks(items) {
   for (const item of items) {
+    item.style.display = "";
+    item.style.height = "";
+    item.style.minHeight = "";
+    item.style.margin = "";
+    item.style.padding = "";
+    item.style.overflow = "";
+    item.style.border = "";
+    item.style.boxShadow = "";
+    item.style.background = "";
     item.removeAttribute(DUPLICATE_ATTR);
   }
 }
@@ -154,7 +172,18 @@ function injectStyle() {
     }
 
     .${ITEM_CLASS}[${DUPLICATE_ATTR}="true"] {
-      opacity: 0.35 !important;
+      height: 0 !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      background: transparent !important;
+      overflow: hidden !important;
+    }
+
+    .${ITEM_CLASS}[${DUPLICATE_ATTR}="true"] * {
+      display: none !important;
     }
   `;
   document.head.appendChild(style);
