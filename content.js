@@ -303,8 +303,32 @@ function bootstrap() {
   startPeriodicExpand();
 }
 
-if (document.readyState === "complete") {
-  bootstrap();
-} else {
-  window.addEventListener("load", bootstrap);
+const isTestEnv = typeof module !== "undefined" && module.exports;
+if (!isTestEnv) {
+  if (document.readyState === "complete") {
+    bootstrap();
+  } else {
+    window.addEventListener("load", bootstrap);
+  }
+}
+
+function setTimingForTest({ expandAt, dedupeAt } = {}) {
+  if (typeof expandAt === "number") expandEnabledAt = expandAt;
+  if (typeof dedupeAt === "number") dedupeEnabledAt = dedupeAt;
+}
+
+if (isTestEnv) {
+  module.exports = {
+    getItems,
+    getBodyKey,
+    shouldExpand,
+    expandEditor,
+    expandText,
+    clearDuplicateMarks,
+    applyDuplicateMarks,
+    markDuplicate,
+    setTimingForTest,
+    EXPANDED_ATTR,
+    DUPLICATE_ATTR,
+  };
 }
