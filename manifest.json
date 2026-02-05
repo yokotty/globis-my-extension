@@ -6,9 +6,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://vc.globis.ac.jp/my/cm/*",
-        "https://vc.globis.ac.jp/my/*",
-        "https://vc.globis.ac.jp/cm/*"
+        "https://vc.globis.ac.jp/my/cm/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
