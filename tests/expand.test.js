@@ -144,3 +144,23 @@ test("dedupe is delayed until dedupeAt", () => {
 
   jest.useRealTimers();
 });
+
+test("different bodies are not marked as duplicates", () => {
+  const first = buildItem({
+    title: "横田さんがクラスであなたにメンションしました",
+    body: "本文Aです。本文Aです。本文Aです。",
+    top: 0,
+  });
+  const second = buildItem({
+    title: "横田さんがクラスであなたにメンションしました",
+    body: "本文Bです。本文Bです。本文Bです。",
+    top: 20,
+  });
+  document.body.appendChild(first);
+  document.body.appendChild(second);
+
+  expandText(document);
+
+  expect(first.getAttribute(DUPLICATE_ATTR)).toBe(null);
+  expect(second.getAttribute(DUPLICATE_ATTR)).toBe(null);
+});
