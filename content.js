@@ -8,6 +8,7 @@ const HIDDEN_ATTR = "data-vc-hidden";
 const MENTION_SUFFIX = "であなたにメンションしました";
 const DEDUPE_LINES = 5;
 const MIN_BODY_CHARS = 20;
+const COLLAPSED_ATTR = "data-vc-collapsed";
 
 let seenBodies = new Set();
 let itemBodyKey = new WeakMap();
@@ -54,16 +55,41 @@ function shouldExpand(item) {
   return titleText.includes(MENTION_SUFFIX);
 }
 
+function resetItemState(item, editor) {
+  item.style.display = "";
+  item.style.height = "";
+  item.style.minHeight = "";
+  item.style.margin = "";
+  item.style.padding = "";
+  item.style.overflow = "";
+  item.removeAttribute(HIDDEN_ATTR);
+  item.removeAttribute(COLLAPSED_ATTR);
+  editor.removeAttribute(EXPANDED_ATTR);
+  itemBodyKey.delete(item);
+}
+
+function collapseItem(item) {
+  item.style.display = "block";
+  item.style.height = "0px";
+  item.style.minHeight = "0px";
+  item.style.margin = "0px";
+  item.style.padding = "0px";
+  item.style.overflow = "hidden";
+  item.setAttribute(COLLAPSED_ATTR, "true");
+  item.setAttribute(HIDDEN_ATTR, "true");
+}
+
 function hideIfDuplicate(item, editor) {
-  if (itemBodyKey.has(item)) return false;
   const key = getBodyKey(editor);
   if (!key) return false;
   if (key.length < MIN_BODY_CHARS) return false;
+  if (itemBodyKey.has(item)) return false;
+
   if (seenBodies.has(key)) {
-    item.style.display = "none";
-    item.setAttribute(HIDDEN_ATTR, "true");
+    collapseItem(item);
     return true;
   }
+
   seenBodies.add(key);
   itemBodyKey.set(item, key);
   return false;
@@ -77,6 +103,9 @@ function expandEditor(editor) {
 
   editor.style.maxHeight = "none";
   editor.style.overflow = "visible";
+  editor.style.display = "block";
+  editor.style.webkitLineClamp = "unset";
+  editor.style.webkitBoxOrient = "initial";
 
   editor.setAttribute(EXPANDED_ATTR, "true");
 }
@@ -92,13 +121,10 @@ function expandText(root = document) {
     const signature = getItemSignature(item, editor);
     const prevSignature = itemSignature.get(item);
     if (prevSignature && prevSignature !== signature) {
-      item.style.display = "";
-      item.removeAttribute(HIDDEN_ATTR);
-      editor.removeAttribute(EXPANDED_ATTR);
+      resetItemState(item, editor);
     }
     itemSignature.set(item, signature);
 
-    if (editor.getAttribute(EXPANDED_ATTR) === "true") continue;
     if (item.getAttribute(HIDDEN_ATTR) === "true") continue;
 
     if (hideIfDuplicate(item, editor)) continue;
@@ -127,8 +153,12 @@ function injectStyle() {
       display: none;
     }
 
-    .editor-content.${EXPANDED_ATTR} {
-      max-height: none;
+    .editor-content[${EXPANDED_ATTR}="true"] {
+      max-height: none !important;
+      overflow: visible !important;
+      display: block !important;
+      -webkit-line-clamp: unset !important;
+      -webkit-box-orient: initial !important;
     }
   `;
   document.head.appendChild(style);
@@ -209,17 +239,22 @@ function init() {
 }
 
 function scheduleInit() {
+  init();
   setTimeout(init, INIT_DELAY_MS);
 }
 
-function onUrlChange() {
-  if (lastUrl === location.href) return;
-  lastUrl = location.href;
+function resetStateForNavigation() {
   seenBodies = new Set();
   itemBodyKey = new WeakMap();
   itemSignature = new WeakMap();
   clearObservers();
   stopPeriodicExpand();
+}
+
+function onUrlChange() {
+  if (lastUrl === location.href) return;
+  lastUrl = location.href;
+  resetStateForNavigation();
   scheduleInit();
   startPeriodicExpand();
 }
