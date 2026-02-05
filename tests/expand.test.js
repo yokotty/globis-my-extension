@@ -39,7 +39,7 @@ beforeEach(() => {
 
 test("shouldExpand matches mention notifications", () => {
   const item = buildItem({
-    title: "青木さんがクラスであなたにメンションしました",
+    title: "横田さんがクラスであなたにメンションしました",
     body: "本文",
     top: 0,
   });
@@ -49,7 +49,7 @@ test("shouldExpand matches mention notifications", () => {
 
 test("reaction notifications are not expanded", () => {
   const item = buildItem({
-    title: "青木さんがクラスであなたにリアクションしました",
+    title: "横田さんがクラスであなたにリアクションしました",
     body: "本文",
     top: 0,
   });
@@ -61,7 +61,7 @@ test("reaction notifications are not expanded", () => {
 
 test("expandText expands mention body", () => {
   const item = buildItem({
-    title: "青木さんがクラスであなたにメンションしました",
+    title: "横田さんがクラスであなたにメンションしました",
     body: "本文",
     top: 0,
   });
@@ -75,7 +75,7 @@ test("expandText expands mention body", () => {
 test("expand is delayed until expandAt", () => {
   jest.useFakeTimers();
   const item = buildItem({
-    title: "青木さんがクラスであなたにメンションしました",
+    title: "横田さんがクラスであなたにメンションしました",
     body: "本文",
     top: 0,
   });
@@ -98,12 +98,12 @@ test("expand is delayed until expandAt", () => {
 test("duplicate items are marked after ordering", () => {
   const bodyText = "同じ本文です。同じ本文です。同じ本文です。";
   const first = buildItem({
-    title: "青木さんがクラスであなたにメンションしました",
+    title: "横田さんがクラスであなたにメンションしました",
     body: bodyText,
     top: 0,
   });
   const second = buildItem({
-    title: "青木さんがクラスであなたにメンションしました",
+    title: "横田さんがクラスであなたにメンションしました",
     body: bodyText,
     top: 20,
   });
@@ -120,12 +120,12 @@ test("dedupe is delayed until dedupeAt", () => {
   jest.useFakeTimers();
   const bodyText = "同じ本文です。同じ本文です。同じ本文です。";
   const first = buildItem({
-    title: "青木さんがクラスであなたにメンションしました",
+    title: "横田さんがクラスであなたにメンションしました",
     body: bodyText,
     top: 0,
   });
   const second = buildItem({
-    title: "青木さんがクラスであなたにメンションしました",
+    title: "横田さんがクラスであなたにメンションしました",
     body: bodyText,
     top: 20,
   });
