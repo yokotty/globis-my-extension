@@ -103,3 +103,32 @@ test("duplicate items are marked after ordering", () => {
   expect(first.getAttribute(DUPLICATE_ATTR)).toBe(null);
   expect(second.getAttribute(DUPLICATE_ATTR)).toBe("true");
 });
+
+test("dedupe is delayed until dedupeAt", () => {
+  jest.useFakeTimers();
+  const bodyText = "同じ本文です。同じ本文です。同じ本文です。";
+  const first = buildItem({
+    title: "青木さんがクラスであなたにメンションしました",
+    body: bodyText,
+    top: 0,
+  });
+  const second = buildItem({
+    title: "青木さんがクラスであなたにメンションしました",
+    body: bodyText,
+    top: 20,
+  });
+  document.body.appendChild(first);
+  document.body.appendChild(second);
+
+  const now = Date.now();
+  setTimingForTest({ expandAt: 0, dedupeAt: now + 2000 });
+  expandText(document);
+
+  expect(second.getAttribute(DUPLICATE_ATTR)).toBe(null);
+
+  jest.advanceTimersByTime(2000);
+  expandText(document);
+  expect(second.getAttribute(DUPLICATE_ATTR)).toBe("true");
+
+  jest.useRealTimers();
+});
