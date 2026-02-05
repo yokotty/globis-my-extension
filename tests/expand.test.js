@@ -164,3 +164,25 @@ test("different bodies are not marked as duplicates", () => {
   expect(first.getAttribute(DUPLICATE_ATTR)).toBe(null);
   expect(second.getAttribute(DUPLICATE_ATTR)).toBe(null);
 });
+
+test("reaction notifications are also deduped", () => {
+  setTimingForTest({ expandAt: 0, dedupeAt: 0 });
+  const bodyText = "リアクション本文です。リアクション本文です。";
+  const first = buildItem({
+    title: "横田さんがクラスであなたにリアクションしました",
+    body: bodyText,
+    top: 0,
+  });
+  const second = buildItem({
+    title: "横田さんがクラスであなたにリアクションしました",
+    body: bodyText,
+    top: 20,
+  });
+  document.body.appendChild(first);
+  document.body.appendChild(second);
+
+  expandText(document);
+
+  expect(first.getAttribute(DUPLICATE_ATTR)).toBe(null);
+  expect(second.getAttribute(DUPLICATE_ATTR)).toBe("true");
+});

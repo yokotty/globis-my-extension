@@ -6,6 +6,7 @@ const PERIODIC_EXPAND_MS = 2000;
 const EXPANDED_ATTR = "data-vc-expanded";
 const HIDDEN_ATTR = "data-vc-hidden";
 const MENTION_SUFFIX = "であなたにメンションしました";
+const REACTION_SUFFIX = "であなたにリアクションしました";
 const DEDUPE_LINES = 5; // limit to avoid expensive full-body comparisons
 const MIN_BODY_CHARS = 20; // skip dedupe until body is reasonably populated
 const DUPLICATE_ATTR = "data-vc-duplicate";
@@ -60,6 +61,11 @@ function shouldExpand(item) {
   return titleText.includes(MENTION_SUFFIX);
 }
 
+function shouldDedupe(item) {
+  const titleText = getTitleText(item);
+  return titleText.includes(MENTION_SUFFIX) || titleText.includes(REACTION_SUFFIX);
+}
+
 function markDuplicate(item) {
   item.style.display = "block";
   item.style.height = "0px";
@@ -105,10 +111,9 @@ function applyDuplicateMarks(items) {
   const ordered = getVisualItems(items);
   const firstByKey = new Map();
   for (const item of ordered) {
-    if (!shouldExpand(item)) continue;
+    if (!shouldDedupe(item)) continue;
     const editor = item.querySelector(".editor-content");
     if (!editor) continue;
-    if (editor.getAttribute(EXPANDED_ATTR) !== "true") continue;
     const key = getBodyKey(editor);
     if (!key || key.length < MIN_BODY_CHARS) continue;
 
