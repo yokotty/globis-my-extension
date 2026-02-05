@@ -6,8 +6,8 @@ const PERIODIC_EXPAND_MS = 2000;
 const EXPANDED_ATTR = "data-vc-expanded";
 const HIDDEN_ATTR = "data-vc-hidden";
 const MENTION_SUFFIX = "であなたにメンションしました";
-const DEDUPE_LINES = 5;
-const MIN_BODY_CHARS = 20;
+const DEDUPE_LINES = 5; // limit to avoid expensive full-body comparisons
+const MIN_BODY_CHARS = 20; // skip dedupe until body is reasonably populated
 const DUPLICATE_ATTR = "data-vc-duplicate";
 const EXPAND_DELAY_MS = 1000;
 const DEDUPE_DELAY_MS = 2000;
@@ -89,6 +89,8 @@ function clearDuplicateMarks(items) {
 }
 
 function getVisualItems(items) {
+  // DOM order can differ from on-screen order in virtualized lists.
+  // Use visual position to pick the "first" item reliably.
   return items
     .map((item) => {
       const rect = item.getBoundingClientRect();
