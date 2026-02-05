@@ -47,6 +47,18 @@ test("shouldExpand matches mention notifications", () => {
   expect(shouldExpand(item)).toBe(true);
 });
 
+test("reaction notifications are not expanded", () => {
+  const item = buildItem({
+    title: "青木さんがクラスであなたにリアクションしました",
+    body: "本文",
+    top: 0,
+  });
+  document.body.appendChild(item);
+  expandText(document);
+  const editor = item.querySelector(".editor-content");
+  expect(editor.getAttribute(EXPANDED_ATTR)).toBe(null);
+});
+
 test("expandText expands mention body", () => {
   const item = buildItem({
     title: "青木さんがクラスであなたにメンションしました",
