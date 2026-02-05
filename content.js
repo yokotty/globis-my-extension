@@ -8,7 +8,8 @@ const HIDDEN_ATTR = "data-vc-hidden";
 const MENTION_SUFFIX = "であなたにメンションしました";
 const DEDUPE_LINES = 5;
 
-const seenBodies = new Set();
+let seenBodies = new Set();
+let itemBodyKey = new WeakMap();
 let currentObserver = null;
 let finderObserver = null;
 let periodicTimer = null;
@@ -46,6 +47,7 @@ function shouldExpand(item) {
 }
 
 function hideIfDuplicate(item, editor) {
+  if (itemBodyKey.has(item)) return false;
   const key = getBodyKey(editor);
   if (!key) return false;
   if (seenBodies.has(key)) {
@@ -54,6 +56,7 @@ function hideIfDuplicate(item, editor) {
     return true;
   }
   seenBodies.add(key);
+  itemBodyKey.set(item, key);
   return false;
 }
 
@@ -193,7 +196,8 @@ function scheduleInit() {
 function onUrlChange() {
   if (lastUrl === location.href) return;
   lastUrl = location.href;
-  seenBodies.clear();
+  seenBodies = new Set();
+  itemBodyKey = new WeakMap();
   clearObservers();
   stopPeriodicExpand();
   scheduleInit();
