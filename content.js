@@ -8,13 +8,16 @@ const HIDDEN_ATTR = "data-vc-hidden";
 const MENTION_SUFFIX = "であなたにメンションしました";
 const DEDUPE_LINES = 5;
 const MIN_BODY_CHARS = 20;
-const COLLAPSED_ATTR = "data-vc-collapsed";
+const DUPLICATE_ATTR = "data-vc-duplicate";
+const EXPAND_DELAY_MS = 1000;
+const DEDUPE_DELAY_MS = 2000;
 
-let itemSignature = new WeakMap();
 let currentObserver = null;
 let finderObserver = null;
 let periodicTimer = null;
 let lastUrl = location.href;
+let expandEnabledAt = Date.now() + EXPAND_DELAY_MS;
+let dedupeEnabledAt = Date.now() + EXPAND_DELAY_MS + DEDUPE_DELAY_MS;
 
 function normalizeText(text) {
   return (text || "").replace(/\s+/g, "").trim();
@@ -31,9 +34,15 @@ function getTitleText(item) {
   return normalizeText(title.textContent);
 }
 
-function getItemSignature(item, editor) {
-  const titleText = getTitleText(item);
-  return `${titleText}||${editor.innerText || editor.textContent || ""}`;
+function getBodyKey(editor) {
+  const text = (editor.innerText || editor.textContent || "").trim();
+  if (!text) return "";
+  const lines = text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, DEDUPE_LINES);
+  return lines.length > 0 ? lines.join("\n") : "";
 }
 
 function shouldExpand(item) {
@@ -41,16 +50,44 @@ function shouldExpand(item) {
   return titleText.includes(MENTION_SUFFIX);
 }
 
-function resetItemState(item, editor) {
-  item.style.display = "";
-  item.style.height = "";
-  item.style.minHeight = "";
-  item.style.margin = "";
-  item.style.padding = "";
-  item.style.overflow = "";
-  item.removeAttribute(HIDDEN_ATTR);
-  item.removeAttribute(COLLAPSED_ATTR);
-  editor.removeAttribute(EXPANDED_ATTR);
+function markDuplicate(item) {
+  item.setAttribute(DUPLICATE_ATTR, "true");
+}
+
+function clearDuplicateMarks(items) {
+  for (const item of items) {
+    item.removeAttribute(DUPLICATE_ATTR);
+  }
+}
+
+function getVisualItems(items) {
+  return items
+    .map((item) => {
+      const rect = item.getBoundingClientRect();
+      return { item, top: rect.top, left: rect.left, height: rect.height };
+    })
+    .filter((entry) => Number.isFinite(entry.top) && entry.height > 0)
+    .sort((a, b) => (a.top - b.top) || (a.left - b.left))
+    .map((entry) => entry.item);
+}
+
+function applyDuplicateMarks(items) {
+  const ordered = getVisualItems(items);
+  const firstByKey = new Map();
+  for (const item of ordered) {
+    if (!shouldExpand(item)) continue;
+    const editor = item.querySelector(".editor-content");
+    if (!editor) continue;
+    if (editor.getAttribute(EXPANDED_ATTR) !== "true") continue;
+    const key = getBodyKey(editor);
+    if (!key || key.length < MIN_BODY_CHARS) continue;
+
+    if (!firstByKey.has(key)) {
+      firstByKey.set(key, item);
+      continue;
+    }
+    markDuplicate(item);
+  }
 }
 
 function expandEditor(editor) {
@@ -72,20 +109,20 @@ function expandText(root = document) {
   const items = getItems(root);
   if (items.length === 0) return;
 
+  clearDuplicateMarks(items);
+  const now = Date.now();
+
   for (const item of items) {
     const editor = item.querySelector(".editor-content");
     if (!editor) continue;
-
-    const signature = getItemSignature(item, editor);
-    const prevSignature = itemSignature.get(item);
-    if (prevSignature && prevSignature !== signature) {
-      resetItemState(item, editor);
-    }
-    itemSignature.set(item, signature);
-
     if (!shouldExpand(item)) continue;
-
+    if (now < expandEnabledAt) continue;
+    if (editor.getAttribute(EXPANDED_ATTR) === "true") continue;
     expandEditor(editor);
+  }
+
+  if (now >= dedupeEnabledAt) {
+    applyDuplicateMarks(items);
   }
 }
 
@@ -116,19 +153,8 @@ function injectStyle() {
       -webkit-box-orient: initial !important;
     }
 
-    .${ITEM_CLASS}[${COLLAPSED_ATTR}="true"] {
-      height: 0 !important;
-      min-height: 0 !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      border: 0 !important;
-      box-shadow: none !important;
-      background: transparent !important;
-      overflow: hidden !important;
-    }
-
-    .${ITEM_CLASS}[${COLLAPSED_ATTR}="true"] * {
-      display: none !important;
+    .${ITEM_CLASS}[${DUPLICATE_ATTR}="true"] {
+      opacity: 0.35 !important;
     }
   `;
   document.head.appendChild(style);
@@ -214,9 +240,10 @@ function scheduleInit() {
 }
 
 function resetStateForNavigation() {
-  itemSignature = new WeakMap();
   clearObservers();
   stopPeriodicExpand();
+  expandEnabledAt = Date.now() + EXPAND_DELAY_MS;
+  dedupeEnabledAt = Date.now() + EXPAND_DELAY_MS + DEDUPE_DELAY_MS;
 }
 
 function onUrlChange() {
