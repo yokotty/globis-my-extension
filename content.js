@@ -4,7 +4,7 @@ const INIT_DELAY_MS = 1200;
 const OBS_DEBOUNCE_MS = 200;
 const PERIODIC_EXPAND_MS = 2000;
 const EXPANDED_ATTR = "data-vc-expanded";
-const HIDDEN_ATTR = "data-vc-hidden";
+const ELLIPSIS_CLASS = "vc-ellipsis";
 const MENTION_SUFFIX = "であなたにメンションしました";
 const REACTION_SUFFIX = "であなたにリアクションしました";
 const DEDUPE_LINES = 5; // limit to avoid expensive full-body comparisons
@@ -125,17 +125,28 @@ function applyDuplicateMarks(items) {
   }
 }
 
-function expandEditor(editor) {
+function applyTenLinePreview(editor) {
   editor.classList.remove("line-clamp-3");
   editor.classList.remove("line-clamp-4");
   editor.classList.remove("line-clamp-2");
   editor.classList.add("line-clamp-none");
 
-  editor.style.maxHeight = "none";
-  editor.style.overflow = "visible";
-  editor.style.display = "block";
-  editor.style.webkitLineClamp = "unset";
-  editor.style.webkitBoxOrient = "initial";
+  editor.style.display = "-webkit-box";
+  editor.style.webkitBoxOrient = "vertical";
+  editor.style.webkitLineClamp = "10";
+  editor.style.overflow = "hidden";
+
+  const existing = editor.querySelector(`.${ELLIPSIS_CLASS}`);
+  if (existing) existing.remove();
+
+  requestAnimationFrame(() => {
+    if (editor.scrollHeight > editor.clientHeight + 1) {
+      const ellipsis = document.createElement("span");
+      ellipsis.className = ELLIPSIS_CLASS;
+      ellipsis.textContent = " ...";
+      editor.appendChild(ellipsis);
+    }
+  });
 
   editor.setAttribute(EXPANDED_ATTR, "true");
 }
@@ -147,7 +158,7 @@ function applyExpansions(items, now) {
     if (!shouldExpand(item)) continue;
     if (now < expandEnabledAt) continue;
     if (editor.getAttribute(EXPANDED_ATTR) === "true") continue;
-    expandEditor(editor);
+    applyTenLinePreview(editor);
   }
 }
 
@@ -186,11 +197,14 @@ function injectStyle() {
     }
 
     .editor-content[${EXPANDED_ATTR}="true"] {
-      max-height: none !important;
-      overflow: visible !important;
-      display: block !important;
-      -webkit-line-clamp: unset !important;
-      -webkit-box-orient: initial !important;
+      display: -webkit-box !important;
+      -webkit-box-orient: vertical !important;
+      -webkit-line-clamp: 10 !important;
+      overflow: hidden !important;
+    }
+
+    .editor-content .${ELLIPSIS_CLASS} {
+      white-space: nowrap;
     }
 
     .${ITEM_CLASS}[${DUPLICATE_ATTR}="true"] {
@@ -343,7 +357,7 @@ if (isTestEnv) {
     getItems,
     getBodyKey,
     shouldExpand,
-    expandEditor,
+    applyTenLinePreview,
     expandText,
     clearDuplicateMarks,
     applyDuplicateMarks,

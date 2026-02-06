@@ -69,7 +69,22 @@ test("expandText expands mention body", () => {
   expandText(document);
   const editor = item.querySelector(".editor-content");
   expect(editor.getAttribute(EXPANDED_ATTR)).toBe("true");
-  expect(editor.classList.contains("line-clamp-none")).toBe(true);
+  expect(editor.style.webkitLineClamp).toBe("10");
+});
+
+test("preview uses 10-line clamp for long bodies", () => {
+  const longBody = Array.from({ length: 12 }, (_, i) => `行${i + 1}`).join("\n");
+  const item = buildItem({
+    title: "横田さんがクラスであなたにメンションしました",
+    body: longBody,
+    top: 0,
+  });
+  document.body.appendChild(item);
+  expandText(document);
+  const editor = item.querySelector(".editor-content");
+  expect(editor.getAttribute(EXPANDED_ATTR)).toBe("true");
+  expect(editor.style.webkitLineClamp).toBe("10");
+  expect(editor.style.overflow).toBe("hidden");
 });
 
 test("expand is delayed until expandAt", () => {
