@@ -97,13 +97,13 @@ test("expand is delayed until expandAt", () => {
   document.body.appendChild(item);
 
   const now = Date.now();
-  setTimingForTest({ expandAt: now + 1000, dedupeAt: 0 });
+  setTimingForTest({ expandAt: now + 500, dedupeAt: 0 });
   expandText(document);
 
   const editor = item.querySelector(".editor-content");
   expect(editor.getAttribute(EXPANDED_ATTR)).toBe(null);
 
-  jest.advanceTimersByTime(1000);
+  jest.advanceTimersByTime(500);
   expandText(document);
   expect(editor.getAttribute(EXPANDED_ATTR)).toBe("true");
 
@@ -148,12 +148,12 @@ test("dedupe is delayed until dedupeAt", () => {
   document.body.appendChild(second);
 
   const now = Date.now();
-  setTimingForTest({ expandAt: 0, dedupeAt: now + 2000 });
+  setTimingForTest({ expandAt: 0, dedupeAt: now + 1000 });
   expandText(document);
 
   expect(second.getAttribute(DUPLICATE_ATTR)).toBe(null);
 
-  jest.advanceTimersByTime(2000);
+  jest.advanceTimersByTime(1000);
   expandText(document);
   expect(second.getAttribute(DUPLICATE_ATTR)).toBe("true");
 

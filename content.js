@@ -10,8 +10,8 @@ const REACTION_SUFFIX = "であなたにリアクションしました";
 const DEDUPE_LINES = 5; // limit to avoid expensive full-body comparisons
 const MIN_BODY_CHARS = 20; // skip dedupe until body is reasonably populated
 const DUPLICATE_ATTR = "data-vc-duplicate";
-const EXPAND_DELAY_MS = 1000;
-const DEDUPE_DELAY_MS = 2000;
+const EXPAND_DELAY_MS = 500;
+const DEDUPE_DELAY_MS = 1000;
 
 let currentObserver = null;
 let finderObserver = null;
