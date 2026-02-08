@@ -67,6 +67,20 @@ function shouldDedupe(item) {
 }
 
 function markDuplicate(item) {
+  const isSpacer = (el) => {
+    if (!el || !el.classList) return false;
+    if (el.classList.contains("items-start") && el.classList.contains("w-full")) return true;
+    if (el.classList.contains("relative") && el.classList.contains("mr-3")) return true;
+    return false;
+  };
+
+  let prev = item.previousElementSibling;
+  while (prev && isSpacer(prev)) {
+    const toRemove = prev;
+    prev = prev.previousElementSibling;
+    toRemove.remove();
+  }
+
   item.style.display = "block";
   item.style.height = "0px";
   item.style.minHeight = "0px";

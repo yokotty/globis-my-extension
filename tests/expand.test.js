@@ -160,6 +160,45 @@ test("dedupe is delayed until dedupeAt", () => {
   jest.useRealTimers();
 });
 
+test("duplicate item removes its preceding spacer siblings", () => {
+  setTimingForTest({ expandAt: 0, dedupeAt: 0 });
+  const bodyText = "同じ本文です。同じ本文です。同じ本文です。";
+
+  const spacerA1 = document.createElement("div");
+  spacerA1.className = "flex mt-4 md:mt-6 w-full items-start";
+  const spacerB1 = document.createElement("div");
+  spacerB1.className = "relative mr-3";
+
+  const spacerA2 = document.createElement("div");
+  spacerA2.className = "flex mt-4 md:mt-6 w-full items-start";
+  const spacerB2 = document.createElement("div");
+  spacerB2.className = "relative mr-3";
+
+  const first = buildItem({
+    title: "横田さんがクラスであなたにメンションしました",
+    body: bodyText,
+    top: 0,
+  });
+  const second = buildItem({
+    title: "横田さんがクラスであなたにメンションしました",
+    body: bodyText,
+    top: 20,
+  });
+
+  document.body.appendChild(spacerA1);
+  document.body.appendChild(spacerB1);
+  document.body.appendChild(first);
+  document.body.appendChild(spacerA2);
+  document.body.appendChild(spacerB2);
+  document.body.appendChild(second);
+
+  expandText(document);
+
+  expect(second.getAttribute(DUPLICATE_ATTR)).toBe("true");
+  expect(spacerA2.isConnected).toBe(false);
+  expect(spacerB2.isConnected).toBe(false);
+});
+
 test("different bodies are not marked as duplicates", () => {
   const first = buildItem({
     title: "横田さんがクラスであなたにメンションしました",
