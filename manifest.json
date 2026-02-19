@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GLOBIS マイページ通知拡張",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Expand notification text on GLOBIS VC without opening detail pages.",
   "content_scripts": [
     {
